@@ -20,6 +20,7 @@ import {
   LanguageModel,
   dynamicTool,
   jsonSchema,
+  stepCountIs,
 } from "ai";
 import { loadConfig } from "@/lib/config";
 import { connectMcp, callMcpTool, McpTool } from "@/lib/mcp";
@@ -165,6 +166,7 @@ export async function POST(req: Request) {
         system: orchestratorSystem,
         messages: [{ role: "user", content: userText }],
         tools: hasTools ? aiTools : undefined,
+        stopWhen: stepCountIs(ORCHESTRATOR_MAX_ITERATIONS),
       });
 
       // Collect all dynamic tool outputs across all internal steps
