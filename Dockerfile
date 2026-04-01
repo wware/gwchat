@@ -1,5 +1,10 @@
 FROM node:20-alpine AS builder
 
+# Build-time base path (e.g. /chat when served behind nginx at /chat).
+# Pass via: docker build --build-arg NEXT_PUBLIC_BASE_PATH=/chat
+ARG NEXT_PUBLIC_BASE_PATH=""
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
