@@ -38,3 +38,6 @@ body {
 .prose pre code { background: none; padding: 0; }
 .prose a { color: #2563eb; text-decoration: underline; }
 .prose strong { font-weight: 600; }
+.prose table { border-collapse: collapse; width: 100%; margin-bottom: 0.75em; font-size: 0.85em; }
+.prose th, .prose td { border: 1px solid rgba(0,0,0,0.15); padding: 0.35em 0.65em; text-align: left; }
+.prose th { background: rgba(0,0,0,0.05); font-weight: 600; }

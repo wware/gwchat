@@ -5,16 +5,20 @@
  */
 
 import { loadConfig } from "@/lib/config";
-import { connectMcp } from "@/lib/mcp";
+import { connectMcp, callMcpTool } from "@/lib/mcp";
 import { MCP_SSE_URL, LLM_PROVIDER, ORCHESTRATOR_MODEL, SYNTHESIS_MODEL } from "@/lib/env";
 
 export async function GET() {
   const config = loadConfig();
 
   let mcpStatus: { connected: boolean; tools: string[]; error?: string };
+  let schemaSummary: string | null = null;
   try {
-    const { tools } = await connectMcp();
+    const { tools, client } = await connectMcp();
     mcpStatus = { connected: true, tools: tools.map((t) => t.name) };
+    if (tools.some((t) => t.name === "describe_schema")) {
+      schemaSummary = await callMcpTool(client, "describe_schema", {});
+    }
   } catch (err) {
     mcpStatus = {
       connected: false,
@@ -33,5 +37,6 @@ export async function GET() {
       orchestrator_model: ORCHESTRATOR_MODEL,
       synthesis_model: SYNTHESIS_MODEL,
     },
+    schema_summary: schemaSummary,
   });
 }

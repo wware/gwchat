@@ -121,8 +121,9 @@ function truncateHistory(history: ModelMessage[], nTurns: number): ModelMessage[
 // ── POST handler ──────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as { messages: UIMessage[] };
+  const body = (await req.json()) as { messages: UIMessage[]; schema_summary?: string };
   const uiMessages = body.messages ?? [];
+  const schemaSummary = body.schema_summary ?? null;
 
   // Extract the last user message text
   const lastUiMessage = uiMessages.at(-1);
@@ -154,10 +155,14 @@ export async function POST(req: Request) {
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       // ── Phase A: Orchestrator — runs tool loop internally ─────────────────
+      const orchestratorSystem = schemaSummary
+        ? `This knowledge graph session has the following schema:\n\n${schemaSummary}\n\n---\n\n${config.orchestrator_system_prompt}`
+        : config.orchestrator_system_prompt;
+
       await throttle();
       const orchResult = await generateText({
         model: makeModel(ORCHESTRATOR_MODEL),
-        system: config.orchestrator_system_prompt,
+        system: orchestratorSystem,
         messages: [{ role: "user", content: userText }],
         tools: hasTools ? aiTools : undefined,
       });

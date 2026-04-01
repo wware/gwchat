@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, TextUIPart } from "ai";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeCanonicalLinks from "@/lib/rehype-canonical-links";
 
 interface SessionInfo {
   app_title: string;
@@ -19,6 +21,7 @@ interface SessionInfo {
     orchestrator_model: string;
     synthesis_model: string;
   };
+  schema_summary: string | null;
 }
 
 const BILLING_PATTERNS = [
@@ -29,6 +32,37 @@ const BILLING_PATTERNS = [
 function looksLikeBillingIssue(text: string): boolean {
   const lower = text.toLowerCase();
   return BILLING_PATTERNS.some((p) => lower.includes(p));
+}
+
+function CopyButton({ messages }: { messages: { role: string; parts: { type: string; text?: string }[] }[] }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = useCallback(async () => {
+    const md = messages
+      .map((m) => {
+        const text = m.parts
+          .filter((p) => p.type === "text")
+          .map((p) => p.text ?? "")
+          .join("");
+        const label = m.role === "user" ? "**You**" : "**Assistant**";
+        return `${label}\n\n${text}`;
+      })
+      .join("\n\n---\n\n");
+    await navigator.clipboard.writeText(md);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [messages]);
+
+  return (
+    <button
+      onClick={copy}
+      className="text-xs px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-600
+                 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800
+                 transition-colors"
+    >
+      {copied ? "Copied!" : "Copy chat as markdown"}
+    </button>
+  );
 }
 
 export default function ChatPage() {
@@ -45,8 +79,16 @@ export default function ChatPage() {
   }, []);
 
   const [input, setInput] = useState("");
+  const schemaSummaryRef = useRef<string | null>(null);
+  // Keep ref in sync with session so the transport closure always reads latest value
+  if (session?.schema_summary !== undefined) {
+    schemaSummaryRef.current = session.schema_summary;
+  }
   const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: () => ({ schema_summary: schemaSummaryRef.current }),
+    }),
   });
   const isLoading = status === "streaming" || status === "submitted";
 
@@ -152,7 +194,12 @@ export default function ChatPage() {
                 ) : (
                   <>
                     <div className="prose">
-                      <ReactMarkdown>{fullText}</ReactMarkdown>
+                      <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeCanonicalLinks]}
+                    >
+                      {fullText}
+                    </ReactMarkdown>
                     </div>
                     {looksLikeBillingIssue(fullText) && (
                       <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 border-t border-amber-300 pt-1">
@@ -177,6 +224,13 @@ export default function ChatPage() {
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Copy chat button */}
+      {messages.length > 0 && (
+        <div className="flex justify-end pb-1 flex-shrink-0">
+          <CopyButton messages={messages} />
+        </div>
+      )}
 
       {/* Input */}
       <div className="py-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
