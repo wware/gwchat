@@ -149,8 +149,8 @@ export default function ChatPage() {
         <p className="py-2 text-xs text-red-500">Session error: {sessionError}</p>
       )}
 
-      {/* Example prompts — only shown before any messages */}
-      {Object.keys(examples).length > 0 && messages.length === 0 && (
+      {/* Example prompts — always visible at top */}
+      {Object.keys(examples).length > 0 && (
         <div className="py-3 flex-shrink-0">
           <p className="text-sm font-medium mb-2 text-gray-600 dark:text-gray-300">
             Example prompts:
