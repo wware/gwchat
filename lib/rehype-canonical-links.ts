@@ -8,10 +8,7 @@ import { Text, Element, Root } from "hast";
 import { Plugin } from "unified";
 import { ID_PATTERNS } from "./canonical-links";
 
-const COMBINED = new RegExp(
-  ID_PATTERNS.map((p) => `(?:${p.pattern.source})`).join("|"),
-  "g"
-);
+const COMBINED = new RegExp(ID_PATTERNS.map((p) => `(?:${p.pattern.source})`).join("|"), "g");
 
 const rehypeCanonicalLinks: Plugin<[], Root> = () => {
   return (tree) => {

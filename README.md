@@ -23,14 +23,14 @@ submodule.
 
 Copy `.env.example` to `.env.local` and fill in values. Key vars:
 
-| Variable | Default | Description |
-|---|---|---|
-| `MCP_SSE_URL` | `http://localhost:8001/sse` | kgraph mcpserver SSE endpoint |
-| `LLM_PROVIDER` | `anthropic` | `anthropic`, `openai`, or `ollama` |
-| `ANTHROPIC_API_KEY` | — | Also supports `_1`, `_2`, … for load balancing |
-| `ORCHESTRATOR_MODEL` | `claude-haiku-4-5-20251001` | Lighter model for tool-calling phase |
-| `SYNTHESIS_MODEL` | `claude-sonnet-4-6` | Stronger model for final answer |
-| `GWCHAT_CONFIG` | — | Path to domain config YAML (see below) |
+| Variable             | Default                     | Description                                    |
+| -------------------- | --------------------------- | ---------------------------------------------- |
+| `MCP_SSE_URL`        | `http://localhost:8001/sse` | kgraph mcpserver SSE endpoint                  |
+| `LLM_PROVIDER`       | `anthropic`                 | `anthropic`, `openai`, or `ollama`             |
+| `ANTHROPIC_API_KEY`  | —                           | Also supports `_1`, `_2`, … for load balancing |
+| `ORCHESTRATOR_MODEL` | `claude-haiku-4-5-20251001` | Lighter model for tool-calling phase           |
+| `SYNTHESIS_MODEL`    | `claude-sonnet-4-6`         | Stronger model for final answer                |
+| `GWCHAT_CONFIG`      | —                           | Path to domain config YAML (see below)         |
 
 See `.env.example` for the full list including OpenAI, Ollama, and tuning vars.
 

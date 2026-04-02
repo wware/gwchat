@@ -62,9 +62,7 @@ function makeModel(modelId: string): LanguageModel {
     return createOpenAI({ apiKey: key })(modelId);
   }
   if (LLM_PROVIDER === "ollama") {
-    return createOpenAI({ baseURL: `${OLLAMA_BASE_URL}/v1`, apiKey: "ollama" })(
-      OLLAMA_MODEL
-    );
+    return createOpenAI({ baseURL: `${OLLAMA_BASE_URL}/v1`, apiKey: "ollama" })(OLLAMA_MODEL);
   }
   throw new Error(`Unknown LLM_PROVIDER: ${LLM_PROVIDER}`);
 }
@@ -78,14 +76,14 @@ function buildAiTools(
   const tools: Record<string, ReturnType<typeof dynamicTool>> = {};
   for (const t of mcpTools) {
     const toolName = t.name;
-    const schema = (t.inputSchema && Object.keys(t.inputSchema).length > 0)
-      ? t.inputSchema
-      : { type: "object" as const, properties: {} };
+    const schema =
+      t.inputSchema && Object.keys(t.inputSchema).length > 0
+        ? t.inputSchema
+        : { type: "object" as const, properties: {} };
     tools[toolName] = dynamicTool({
       description: t.description,
       inputSchema: jsonSchema(schema as Parameters<typeof jsonSchema>[0]),
-      execute: async (input) =>
-        callMcpTool(mcpClient, toolName, input as Record<string, unknown>),
+      execute: async (input) => callMcpTool(mcpClient, toolName, input as Record<string, unknown>),
     });
   }
   return tools;
@@ -141,11 +139,9 @@ export async function POST(req: Request) {
   const config = loadConfig();
 
   // Connect to MCP (best-effort)
-  let mcpClient: Awaited<ReturnType<typeof connectMcp>>["client"] | null = null;
   let aiTools: Record<string, ReturnType<typeof dynamicTool>> = {};
   try {
     const conn = await connectMcp();
-    mcpClient = conn.client;
     aiTools = buildAiTools(conn.tools, conn.client);
   } catch {
     // Continue without MCP tools
@@ -170,9 +166,8 @@ export async function POST(req: Request) {
       });
 
       // Collect all dynamic tool outputs across all internal steps
-      const toolResultsThisTurn: string[] = orchResult.dynamicToolResults.map(
-        (r) =>
-          typeof r.output === "string" ? r.output : JSON.stringify(r.output)
+      const toolResultsThisTurn: string[] = orchResult.dynamicToolResults.map((r) =>
+        typeof r.output === "string" ? r.output : JSON.stringify(r.output)
       );
 
       // ── Phase B: Synthesis ────────────────────────────────────────────────
@@ -189,10 +184,7 @@ export async function POST(req: Request) {
         const synthesisResult = await generateText({
           model: makeModel(SYNTHESIS_MODEL),
           system: config.synthesis_system_prompt,
-          messages: [
-            ...truncated,
-            { role: "user", content: synthesisUserContent },
-          ],
+          messages: [...truncated, { role: "user", content: synthesisUserContent }],
         });
         finalText = synthesisResult.text;
       }

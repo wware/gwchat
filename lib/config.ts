@@ -63,9 +63,7 @@ export function loadConfig(): GwchatConfig {
       _config = { ...DEFAULT_CONFIG, ...parsed };
       return _config;
     } catch (err) {
-      console.warn(
-        `[gwchat] Could not load config from ${resolved}: ${err}. Using defaults.`
-      );
+      console.warn(`[gwchat] Could not load config from ${resolved}: ${err}. Using defaults.`);
     }
   }
 

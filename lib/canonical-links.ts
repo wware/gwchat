@@ -27,8 +27,7 @@ export const ID_PATTERNS: IdPattern[] = [
   {
     // UMLS:C0001234
     pattern: /\bUMLS:[A-Z]\d+\b/g,
-    url: (m) =>
-      `https://uts.nlm.nih.gov/uts/umls/concept/${m.replace("UMLS:", "")}`,
+    url: (m) => `https://uts.nlm.nih.gov/uts/umls/concept/${m.replace("UMLS:", "")}`,
   },
   {
     // OMIM:100200
@@ -38,8 +37,7 @@ export const ID_PATTERNS: IdPattern[] = [
   {
     // CHEBI:15422
     pattern: /\bCHEBI:\d+\b/g,
-    url: (m) =>
-      `https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${m}`,
+    url: (m) => `https://www.ebi.ac.uk/chebi/searchId.do?chebiId=${m}`,
   },
   {
     // UniProt: P12345 or Q9UKT9 (6-char alphanumeric starting with letter)
@@ -57,14 +55,9 @@ export const ID_PATTERNS: IdPattern[] = [
  * Split a text string into segments, tagging any canonical ID matches with their URL.
  * Returns an array of { text, url? } — url is set only for matched IDs.
  */
-export function splitWithIds(
-  text: string
-): Array<{ text: string; url?: string }> {
+export function splitWithIds(text: string): Array<{ text: string; url?: string }> {
   // Build a combined pattern that matches any ID
-  const combined = new RegExp(
-    ID_PATTERNS.map((p) => p.pattern.source).join("|"),
-    "g"
-  );
+  const combined = new RegExp(ID_PATTERNS.map((p) => p.pattern.source).join("|"), "g");
 
   const result: Array<{ text: string; url?: string }> = [];
   let last = 0;

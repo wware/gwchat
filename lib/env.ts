@@ -11,15 +11,13 @@ export const ORCHESTRATOR_MODEL =
   process.env.ORCHESTRATOR_MODEL ??
   (LLM_PROVIDER === "openai" ? "gpt-4o-mini" : "claude-haiku-4-5-20251001");
 export const SYNTHESIS_MODEL =
-  process.env.SYNTHESIS_MODEL ??
-  (LLM_PROVIDER === "openai" ? "gpt-4o" : ANTHROPIC_MODEL);
+  process.env.SYNTHESIS_MODEL ?? (LLM_PROVIDER === "openai" ? "gpt-4o" : ANTHROPIC_MODEL);
 
 export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o";
 export const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3.2";
 export const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://ollama:11434";
 
-export const MCP_CONNECT_TIMEOUT_MS =
-  parseFloat(process.env.MCP_CONNECT_TIMEOUT ?? "25") * 1000;
+export const MCP_CONNECT_TIMEOUT_MS = parseFloat(process.env.MCP_CONNECT_TIMEOUT ?? "25") * 1000;
 export const LLM_MIN_REQUEST_INTERVAL_MS =
   parseFloat(process.env.LLM_MIN_REQUEST_INTERVAL_SECONDS ?? "3.0") * 1000;
 export const LLM_RATE_LIMIT_RETRY_DELAY_MS =

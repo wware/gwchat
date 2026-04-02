@@ -6,27 +6,18 @@ import { DefaultChatTransport, TextUIPart } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeCanonicalLinks from "@/lib/rehype-canonical-links";
-
-interface SessionInfo {
-  app_title: string;
-  app_description: string;
-  examples: Record<string, string>;
-  mcp: {
-    connected: boolean;
-    tools: string[];
-    error?: string;
-  };
-  llm: {
-    provider: string;
-    orchestrator_model: string;
-    synthesis_model: string;
-  };
-  schema_summary: string | null;
-}
+import { SessionInfoSchema, type SessionInfo } from "@/lib/schemas";
 
 const BILLING_PATTERNS = [
-  "billing", "credit", "rate limit", "quota", "usage limit",
-  "exceeded", "insufficient credit", "payment required", "429",
+  "billing",
+  "credit",
+  "rate limit",
+  "quota",
+  "usage limit",
+  "exceeded",
+  "insufficient credit",
+  "payment required",
+  "429",
 ];
 
 function looksLikeBillingIssue(text: string): boolean {
@@ -34,7 +25,11 @@ function looksLikeBillingIssue(text: string): boolean {
   return BILLING_PATTERNS.some((p) => lower.includes(p));
 }
 
-function CopyButton({ messages }: { messages: { role: string; parts: { type: string; text?: string }[] }[] }) {
+function CopyButton({
+  messages,
+}: {
+  messages: { role: string; parts: { type: string; text?: string }[] }[];
+}) {
   const [copied, setCopied] = useState(false);
 
   const copy = useCallback(async () => {
@@ -74,22 +69,34 @@ export default function ChatPage() {
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/session`)
       .then((r) => r.json())
-      .then((data: SessionInfo) => setSession(data))
+      .then((data) => setSession(SessionInfoSchema.parse(data)))
       .catch((err) => setSessionError(String(err)));
   }, []);
 
   const [input, setInput] = useState("");
-  const schemaSummaryRef = useRef<string | null>(null);
-  // Keep ref in sync with session so the transport closure always reads latest value
-  if (session?.schema_summary !== undefined) {
-    schemaSummaryRef.current = session.schema_summary;
-  }
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({
-      api: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat`,
-      body: () => ({ schema_summary: schemaSummaryRef.current }),
-    }),
-  });
+  // schemaSummary is kept in state so the transport body callback can read it.
+  // Using state (not a ref) avoids ref access during render.
+  const [schemaSummary, setSchemaSummary] = useState<string | null>(null);
+  useEffect(() => {
+    if (session?.schema_summary !== undefined) {
+      setSchemaSummary(session.schema_summary);
+    }
+  }, [session]);
+  // Capture schemaSummary in a ref that is only read inside the body callback
+  // (i.e. outside render), satisfying the react-hooks/refs rule.
+  const schemaSummaryForTransport = useRef(schemaSummary);
+  useEffect(() => {
+    schemaSummaryForTransport.current = schemaSummary;
+  }, [schemaSummary]);
+  const [transport] = useState(
+    // eslint-disable-next-line react-hooks/refs -- body() fires outside render, not during render
+    () =>
+      new DefaultChatTransport({
+        api: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat`,
+        body: () => ({ schema_summary: schemaSummaryForTransport.current }),
+      })
+  );
+  const { messages, sendMessage, status } = useChat({ transport });
   const isLoading = status === "streaming" || status === "submitted";
 
   // Scroll to bottom on new messages
@@ -113,9 +120,7 @@ export default function ChatPage() {
     <div className="flex flex-col h-full max-w-4xl mx-auto w-full px-4">
       {/* Header */}
       <header className="py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <h1 className="text-xl font-semibold">
-          {session?.app_title ?? "Knowledge Graph Chat"}
-        </h1>
+        <h1 className="text-xl font-semibold">{session?.app_title ?? "Knowledge Graph Chat"}</h1>
         {session && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             {session.app_description}
@@ -137,17 +142,13 @@ export default function ChatPage() {
             </p>
           )}
           <p>
-            LLM: <span className="font-mono">{session.llm.provider}</span> —
-            orchestrator:{" "}
-            <span className="font-mono">{session.llm.orchestrator_model}</span>{" "}
-            → synthesis:{" "}
+            LLM: <span className="font-mono">{session.llm.provider}</span> — orchestrator:{" "}
+            <span className="font-mono">{session.llm.orchestrator_model}</span> → synthesis:{" "}
             <span className="font-mono">{session.llm.synthesis_model}</span>
           </p>
         </div>
       )}
-      {sessionError && (
-        <p className="py-2 text-xs text-red-500">Session error: {sessionError}</p>
-      )}
+      {sessionError && <p className="py-2 text-xs text-red-500">Session error: {sessionError}</p>}
 
       {/* Example prompts — always visible at top */}
       {Object.keys(examples).length > 0 && (
@@ -184,9 +185,10 @@ export default function ChatPage() {
             >
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm
-                  ${m.role === "user"
-                    ? "bg-blue-600 text-white rounded-br-sm"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm"
+                  ${
+                    m.role === "user"
+                      ? "bg-blue-600 text-white rounded-br-sm"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm"
                   }`}
               >
                 {m.role === "user" ? (
@@ -195,16 +197,16 @@ export default function ChatPage() {
                   <>
                     <div className="prose">
                       <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeCanonicalLinks]}
-                    >
-                      {fullText}
-                    </ReactMarkdown>
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeCanonicalLinks]}
+                      >
+                        {fullText}
+                      </ReactMarkdown>
                     </div>
                     {looksLikeBillingIssue(fullText) && (
                       <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 border-t border-amber-300 pt-1">
-                        ⚠️ This response may indicate an API billing or rate limit issue.
-                        Check your provider dashboard or API key.
+                        ⚠️ This response may indicate an API billing or rate limit issue. Check your
+                        provider dashboard or API key.
                       </p>
                     )}
                   </>
@@ -235,7 +237,10 @@ export default function ChatPage() {
       {/* Input */}
       <div className="py-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
         <form
-          onSubmit={(e) => { e.preventDefault(); submitMessage(input); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitMessage(input);
+          }}
           className="flex gap-2"
         >
           <input
