@@ -72,7 +72,7 @@ export default function ChatPage() {
 
   // Load session info on mount
   useEffect(() => {
-    fetch("/api/session")
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/session`)
       .then((r) => r.json())
       .then((data: SessionInfo) => setSession(data))
       .catch((err) => setSessionError(String(err)));
@@ -86,7 +86,7 @@ export default function ChatPage() {
   }
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
-      api: "/api/chat",
+      api: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat`,
       body: () => ({ schema_summary: schemaSummaryRef.current }),
     }),
   });
